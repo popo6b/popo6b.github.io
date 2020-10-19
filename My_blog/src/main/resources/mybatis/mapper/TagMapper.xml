@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itws.dao.TagDao">
+    <resultMap id="TagMap" type="Tag">
+        <id property="id" column="id"></id>
+        <result property="name" column="name"></result>
+        <collection property="blogs" ofType="Tag">
+            <id property="id" column="bid"></id>
+            <result property="title" column="btitle"></result>
+        </collection>
+    </resultMap>
+
+    <resultMap id="TagMapToIndex" type="Tag">
+        <result property="useTagToBlogNum" column="useNum"></result>
+        <result property="name" column="tname"></result>
+        <result property="id" column="tid"></result>
+    </resultMap>
+    <select id="queryById" parameterType="Long" resultType="Tag">
+        select * from t_tag where id=#{id}
+    </select>
+    <select id="queryAll" resultType="Tag">
+        select * from t_tag
+    </select>
+    <select id="queryUseTag" resultMap="TagMap">
+     select t.*,b.id as bid,b.title as btitle from t_tag as t LEFT JOIN t_blog_tags as bt on t.id=bt.tagsId LEFT JOIN t_blog as b ON b.id=bt.blogsId
+    </select>
+    <select id="queryUseTagName" resultType="String">
+         select DISTINCT(t.name) from t_tag as t LEFT JOIN t_blog_tags as bt on t.id=bt.tagsId LEFT JOIN t_blog as b ON b.id=bt.blogsId
+    </select>
+    <delete id="deleteById" parameterType="Long">
+        delete from t_tag where id=#{id}
+    </delete>
+    <update id="updateTag" >
+        update t_tag set name=#{tag.name} where id=#{id}
+    </update>
+    <insert id="save" parameterType="Tag">
+        insert into t_tag(`name`) values(#{name})
+    </insert>
+    <select id="queryByName" parameterType="String" resultType="Tag">
+        select * from t_tag where name=#{name }
+    </select>
+    
+    <select id="queryByIds" parameterType="java.util.List" resultType="Tag">
+        select * from t_tag
+        <where>
+            <if test="list !=null and list.size()>0">
+                <foreach collection="list" open=" and id in (" close=")" item="id" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="queryByNames" parameterType="java.util.List" resultType="Tag">
+        select * from t_tag
+        <where>
+            <if test="list !=null and list.size()>0">
+                <foreach collection="list" open=" and name in (" close=")" item="name" separator=",">
+                    #{name}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="queryTagTop"  resultMap="TagMapToIndex">
+        select bt.blogsId as bid,bt.tagsId as tid ,count(bt.blogsId) as useNum, t.name as tname from t_tag as t INNER JOIN t_blog_tags as bt on t.id=bt.tagsId  INNER JOIN t_blog as b on b.id =bt.blogsId where b.published is TRUE GROUP BY bt.tagsId ORDER BY count(bt.blogsId) desc
+    </select>
+    <select id="queryTagByBlogId" parameterType="Long" resultType="Tag">
+        select t.* from t_tag as t INNER JOIN t_blog_tags as bt on t.id=bt.tagsId INNER JOIN t_blog as b on b.id=bt.blogsId where b.id=#{id}
+    </select>
+</mapper>

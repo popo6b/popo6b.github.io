@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itws.dao.BlogDao">
+    <resultMap id="BlogMap" type="Blog">
+        <id property="id" column="id"></id>
+        <result property="appreciation" column="appreciation"></result>
+        <result property="shareStatement" column="shareStatement"></result>
+        <result property="title" column="title"></result>
+        <result property="content" column="content"></result>
+        <result property="firstPicture" column="firstPicture"></result>
+        <result property="flag" column="flag"></result>
+        <result property="createTime" column="createTime"></result>
+        <result property="updateTime" column="updateTime"></result>
+        <result property="flag" column="flag"></result>
+        <result property="views" column="views"></result>
+        <result property="description" column="description"></result>
+        <result property="commentabled" column="commentabled"></result>
+        <result property="published" column="published"></result>
+        <result property="recommend" column="recommend"></result>
+        <association property="type" column="typeId" select="com.itws.dao.TypeDao.queryById" javaType="type">
+        </association>
+        <association property="user" column="userId" javaType="user" select="com.itws.dao.UserDao.queryUserByUserId">
+        </association>
+        <collection property="tags" ofType="Tag" select="com.itws.dao.TagDao.queryTagByBlogId" column="id">
+        </collection>
+
+    </resultMap>
+    <select id="queryBlog" parameterType="BlogParam" resultMap="BlogMap">
+        select * from t_blog
+        <where>
+        <if test="title!='' and title!=null">
+        and title=#{title}
+        </if>
+        <if test="typeId!=null">
+        and typeId=#{typeId}
+        </if>
+        <if test="recommend!=null ">
+        and recommend=#{recommend}
+        </if>
+
+        </where>
+        group by id
+    </select>
+
+    <select id="queryBlogToIndex" resultMap="BlogMap">
+         select * from t_blog where published is true group by id
+    </select>
+
+    <select id="queryById" parameterType="Long" resultMap="BlogMap">
+         select * from t_blog  where id=#{id}
+    </select>
+    <insert id="save" parameterType="Blog" useGeneratedKeys="true" keyProperty="id"  keyColumn="id">
+        insert into t_blog(`appreciation`,`commentabled`,`content`,`createTime`,`firstPicture`,`flag`,`published`,`recommend`,`description`,`shareStatement`,`title`,`updateTime`,`views`,`typeId`,`userId`)
+        values (#{appreciation},#{commentabled},#{content},#{createTime},#{firstPicture},#{flag},#{published},#{recommend},#{description},#{shareStatement},#{title},#{updateTime},#{views},#{type.id},#{user.id})
+    </insert>
+    <insert id="saveBlogToTags" >
+        insert into t_blog_tags(`blogsId`,`tagsId`) values (#{blogId},#{tagId})
+    </insert>
+
+    <delete id="deleteBlogById" parameterType="Long">
+        delete from t_blog where id=#{id};
+    </delete>
+
+    <delete id="deleteBlogToTags" parameterType="Long">
+        delete from t_blog_tags where blogsId=#{blogId};
+    </delete>
+    
+    <update id="updateBlogById" parameterType="Blog">
+        update t_blog set appreciation=#{appreciation},commentabled=#{commentabled},description=#{description},content=#{content},firstPicture=#{firstPicture},flag=#{flag},published=#{published},recommend=#{recommend},shareStatement=#{shareStatement},
+        title=#{title},updateTime=#{updateTime},typeId=#{type.id} where id=#{id}
+    </update>
+
+    <select id="listRecommendBlogTop" resultMap="BlogMap">
+           select b.*,t.id as tid,t.name as tname, u.id as uid ,u.nickname as uname,u.avatar AS uavatar from t_blog as b INNER JOIN t_type as t on b.typeId=t.id INNER JOIN t_user as u
+        on b.userId=u.id where recommend is true and b.published is true group by b.id order by b.updateTime desc
+    </select>
+
+    <select id="listBlogBySearch" parameterType="String" resultMap="BlogMap">
+             select b.* from t_blog as b  where b.title like #{search} or b.content like #{search} and b.published is true  group by b.id order by b.views desc
+    </select>
+    <update id="updateBlogViews" >
+        update t_blog set views=#{views} where id=#{id}
+    </update>
+    <select id="queryBlogByTagId" parameterType="Long" resultMap="BlogMap" >
+  select b.* from t_blog as b inner JOIN t_blog_tags as bt on b.id=bt.blogsId  where bt.tagsid=#{id} and b.published is true
+
+    </select>
+    <select id="queryBlogByTime" resultType="Blog" parameterType="String">
+SELECT * from t_blog as b where DATE_FORMAT(b.updateTime,'%Y-%m') =#{date} and b.published is true;
+    </select>
+    <select id="queryBlogTime" resultType="String">
+        select DATE_FORMAT(b.updateTime,'%Y-%m') as ym from t_blog as b where b.published is true  GROUP BY ym order by ym desc;
+    </select>
+    <select id="queryBlogCount" resultType="Integer">
+        select count(*) from t_blog where published is true ;
+    </select>
+
+    <select id="queryBlogByTypeId" parameterType="BlogParam" resultMap="BlogMap">
+ select * from t_blog where 1=1 and published is true
+            <if test="typeId!=null">
+            and typeId=#{typeId}
+            </if>
+        group by id
+    </select>
+
+</mapper>

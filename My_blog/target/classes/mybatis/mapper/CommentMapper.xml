@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itws.dao.CommentDao">
+    <resultMap id="commentMap" type="comment">
+        <id property="id" column="id"></id>
+        <result property="nickName" column="nickName"></result>
+        <result property="avatar" column="avatar"></result>
+        <result property="content" column="content"></result>
+        <result property="createTime" column="createTime"></result>
+        <result property="email" column="email"></result>
+        <result property="parentcommentId" column="parentcommentId"></result>
+        <association property="blog" column="blogId">
+            <id column="bid" property="id"></id>
+        </association>
+    </resultMap>
+    <select id="queryCommentById" resultMap="commentMap" parameterType="Long">
+        select c.*,b.id as bid from t_comment as c INNER JOIN t_blog as b on c.blogId=b.id where c.parentcommentId is null and c.blogId=#{id} order by createTime  asc ;
+    </select>
+    <insert id="save" parameterType="Comment">
+        insert into t_comment(`nickName`,`avatar`,`content`,`createTime`,`email`,`parentcommentId`,`blogId`) values (#{nickName},#{avatar},#{content},#{createTime},#{email},#{parentcommentId},#{blogId})
+    </insert>
+    <select id="queryCommentByParentId" parameterType="Long" resultType="comment">
+        SELECT * from t_comment  where parentcommentId=#{id}
+    </select>
+</mapper>
